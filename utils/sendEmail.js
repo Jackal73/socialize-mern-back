@@ -1,4 +1,12 @@
 import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+import { v4 as uuidv4 } from "uuid";
+import { hashString } from "./index.js";
+import Verification from "../models/emailVerification.js";
+
+dotenv.config();
+
+const { ZOHO_AUTH_USER, ZOHO_USER_PASS, APP_URL } = process.env;
 
 // create reusable transporter object using the default SMTP transport
 const transporter = nodemailer.createTransport({
@@ -6,10 +14,18 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true, // true for 465, false for other ports
   auth: {
-    user: process.env.ZOHO_AUTH_USER,
-    pass: process.env.ZOHO_USER_PASS,
+    user: ZOHO_AUTH_USER,
+    pass: ZOHO_USER_PASS,
   },
 });
+
+export const sendVerificationEmail = async (user, res) => {
+  const { _id, email, lastName, firstName } = user;
+
+  const token = _id + uuidv4();
+
+  const link = APP_URL + "users/verify/" + _id + "/" + token;
+
   //   mail options
   const mailOptions = {
     from: ZOHO_AUTH_USER,
@@ -35,3 +51,34 @@ const transporter = nodemailer.createTransport({
     </div>
 </div>`,
   };
+
+  try {
+    const hashedToken = await hashString(token);
+
+    const newVerifiedEmail = await Verification.create({
+      userId: _id,
+      token: hashedToken,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 3600000,
+    });
+
+    if (newVerifiedEmail) {
+      transporter
+        .sendMail(mailOptions)
+        .then(() => {
+          res.status(201).send({
+            success: "PENDING",
+            message:
+              "Verification email has been sent to your account. Check your email for further instructions.",
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+          res.status(404).json({ message: "Something went wrong" });
+        });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({ message: "Something went wrong" });
+  }
+};
