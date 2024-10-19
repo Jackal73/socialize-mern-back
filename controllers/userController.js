@@ -204,3 +204,44 @@ export const getUser = async (req, res, next) => {
       .json({ message: "auth error", success: false, error: error.message });
   }
 };
+export const updateUser = async (req, res, next) => {
+  try {
+    const { firstName, lastName, location, profileUrl, profession } = req.body;
+
+    if (!(firstName || lastName || contact || profession || location)) {
+      next("Please provide all required fields");
+      return;
+    }
+
+    const { userId } = req.body.user;
+
+    const updateUser = {
+      firstName,
+      lastName,
+      location,
+      profileUrl,
+      profession,
+      _id: userId,
+    };
+
+    const user = await Users.findByIdAndUpdate(userId, updateUser, {
+      new: true,
+    });
+
+    await user.populate({ path: "friends", select: "-password" });
+    const token = createJWT(user?._id);
+
+    user.password = undefined;
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      user,
+      token,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({ message: error.message });
+  }
+};
+
