@@ -3,13 +3,14 @@ import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
 import { hashString } from "./index.js";
 import Verification from "../models/emailVerification.js";
+import PasswordReset from "../models/PasswordReset.js";
 
 dotenv.config();
 
 const { ZOHO_AUTH_USER, ZOHO_USER_PASS, APP_URL } = process.env;
 
 // create reusable transporter object using the default SMTP transport
-const transporter = nodemailer.createTransport({
+let transporter = nodemailer.createTransport({
   host: "smtp.zoho.com",
   port: 465,
   secure: true, // true for 465, false for other ports
@@ -69,7 +70,60 @@ export const sendVerificationEmail = async (user, res) => {
           res.status(201).send({
             success: "PENDING",
             message:
-              "Verification email has been sent to your account. Check your email for further instructions.",
+              "A Verification Email has been sent to your account. Check your email for further instructions.",
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+          res.status(404).json({ message: "Something went wrong" });
+        });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({ message: "Something went wrong" });
+  }
+};
+
+export const resetPasswordLink = async (user, res) => {
+  const { _id, email } = user;
+
+  const token = _id + uuidv4();
+  const link = APP_URL + "users/reset-password/" + _id + "/" + token;
+
+  //   mail options
+  const mailOptions = {
+    from: ZOHO_AUTH_USER,
+    to: email,
+    subject: "Password Reset",
+    html: `<div style="font-family: Arial, sans-serif; font-size: 16px; color: #333; background-color: #f7f7f7; padding: 20px; border-radius: 5px;">
+        <h3 style="color: rgb(8, 56, 188)">Password reset link</h3>
+    <hr>
+      Please click the link below to reset your password.
+        <br>
+        <p style="font-size: 18px;"><b>This link expires in 10 minutes</b></p>
+        <br>
+        <a href=${link} style="color: #fff; padding: 10px; text-decoration: none; background-color: #000;  border-radius: 8px; font-size: 18px;">Reset Password</a>
+    </div>`,
+  };
+
+  try {
+    const hashedToken = await hashString(token);
+
+    const resetEmail = await PasswordReset.create({
+      userId: _id,
+      email: email,
+      token: hashedToken,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 600000,
+    });
+
+    if (resetEmail) {
+      transporter
+        .sendMail(mailOptions)
+        .then(() => {
+          res.status(201).send({
+            success: "PENDING",
+            message: "A Reset Password Link has been sent to your account.",
           });
         })
         .catch((err) => {
