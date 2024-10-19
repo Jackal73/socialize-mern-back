@@ -1,6 +1,7 @@
 import Comments from "../models/commentModel.js";
 import Posts from "../models/postModel.js";
 import Users from "../models/userModel.js";
+
 export const createPost = async (req, res, next) => {
   try {
     const { userId } = req.body.user;
@@ -27,6 +28,7 @@ export const createPost = async (req, res, next) => {
     res.status(404).json({ message: error.message });
   }
 };
+
 export const getPosts = async (req, res, next) => {
   try {
     const { userId } = req.body.user;
@@ -78,6 +80,7 @@ export const getPosts = async (req, res, next) => {
     res.status(404).json({ message: error.message });
   }
 };
+
 export const getPost = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -114,6 +117,7 @@ export const getPost = async (req, res, next) => {
     res.status(404).json({ message: error.message });
   }
 };
+
 export const getUserPost = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -307,6 +311,22 @@ export const replyPostComment = async (req, res, next) => {
     commentInfo.save();
 
     res.status(200).json(commentInfo);
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({ message: error.message });
+  }
+};
+
+export const deletePost = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    await Posts.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: "Deleted successfully",
+    });
   } catch (error) {
     console.log(error);
     res.status(404).json({ message: error.message });
