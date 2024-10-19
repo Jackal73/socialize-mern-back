@@ -204,6 +204,7 @@ export const getUser = async (req, res, next) => {
       .json({ message: "auth error", success: false, error: error.message });
   }
 };
+
 export const updateUser = async (req, res, next) => {
   try {
     const { firstName, lastName, location, profileUrl, profession } = req.body;
@@ -364,6 +365,32 @@ export const acceptRequest = async (req, res, next) => {
     });
   }
 };
+
+export const profileViews = async (req, res, next) => {
+  try {
+    const { userId } = req.body.user;
+    const { id } = req.body;
+
+    const user = await Users.findById(id);
+
+    user.views.push(userId);
+
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Successful",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "auth error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
 export const suggestedFriends = async (req, res) => {
   try {
     const { userId } = req.body.user;
