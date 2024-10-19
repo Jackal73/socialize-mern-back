@@ -364,3 +364,28 @@ export const acceptRequest = async (req, res, next) => {
     });
   }
 };
+export const suggestedFriends = async (req, res) => {
+  try {
+    const { userId } = req.body.user;
+
+    let queryObject = {};
+
+    queryObject._id = { $ne: userId };
+
+    queryObject.friends = { $nin: userId };
+
+    let queryResult = Users.find(queryObject)
+      .limit(15)
+      .select("firstName lastName profileUrl profession -password");
+
+    const suggestedFriends = await queryResult;
+
+    res.status(200).json({
+      success: true,
+      data: suggestedFriends,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({ message: error.message });
+  }
+};
