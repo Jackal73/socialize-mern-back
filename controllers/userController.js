@@ -5,6 +5,7 @@ import { compareString, createJWT, hashString } from "../utils/index.js";
 
 import { resetPasswordLink } from "../utils/sendEmail.js";
 import FriendRequest from "../models/friendRequest.js";
+import PasswordReset from "../models/PasswordReset.js";
 
 export const verifyEmail = async (req, res) => {
   const { userId, token } = req.params;
