@@ -114,3 +114,24 @@ export const getPost = async (req, res, next) => {
     res.status(404).json({ message: error.message });
   }
 };
+export const getUserPost = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const post = await Posts.find({ userId: id })
+      .populate({
+        path: "userId",
+        select: "firstName lastName location profileUrl -password",
+      })
+      .sort({ _id: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: "successful",
+      data: post,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({ message: error.message });
+  }
+};
