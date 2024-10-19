@@ -135,6 +135,32 @@ export const getUserPost = async (req, res, next) => {
     res.status(404).json({ message: error.message });
   }
 };
+
+export const getComments = async (req, res, next) => {
+  try {
+    const { postId } = req.params;
+
+    const postComments = await Comments.find({ postId })
+      .populate({
+        path: "userId",
+        select: "firstName lastName location profileUrl -password",
+      })
+      .populate({
+        path: "replies.userId",
+        select: "firstName lastName location profileUrl -password",
+      })
+      .sort({ _id: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: "successful",
+      data: postComments,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({ message: error.message });
+  }
+};
 export const commentPost = async (req, res, next) => {
   try {
     const { comment, from } = req.body;
