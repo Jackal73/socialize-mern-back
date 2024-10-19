@@ -245,3 +245,47 @@ export const updateUser = async (req, res, next) => {
   }
 };
 
+export const friendRequest = async (req, res, next) => {
+  try {
+    const { userId } = req.body.user;
+
+    const { requestTo } = req.body;
+
+    const requestExist = await FriendRequest.findOne({
+      requestFrom: userId,
+      requestTo,
+    });
+
+    if (requestExist) {
+      next("Friend Request already sent.");
+      return;
+    }
+
+    const accountExist = await FriendRequest.findOne({
+      requestFrom: requestTo,
+      requestTo: userId,
+    });
+
+    if (accountExist) {
+      next("Friend Request already sent.");
+      return;
+    }
+
+    const newRes = await FriendRequest.create({
+      requestTo,
+      requestFrom: userId,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Friend Request sent successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "auth error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
